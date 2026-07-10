@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum InventoryStatus {
+  ACQUIRED
+  LISTED
+  SOLD
+  SHIPPED
+}
+
+model InventoryItem {
+  id            Int             @id @default(autoincrement())
+  title         String
+  sku           String?         @unique
+  category      String?
+  brand         String?
+  size          String?
+  purchasePrice Decimal         @db.Decimal(10, 2)
+  listingPrice  Decimal?        @db.Decimal(10, 2)
+  status        InventoryStatus @default(ACQUIRED)
+  acquiredDate  DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  sales         Sale[]
+}
+
+model Sale {
+  id              Int           @id @default(autoincrement())
+  inventoryItemId Int
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  soldPrice       Decimal       @db.Decimal(10, 2)
+  platformFee     Decimal       @db.Decimal(10, 2)
+  shippingCost    Decimal       @db.Decimal(10, 2)
+  soldDate        DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+
+  @@index([inventoryItemId])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  description String
+  category    String
+  amount      Decimal  @db.Decimal(10, 2)
+  expenseDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
