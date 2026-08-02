@@ -12,6 +12,11 @@ const createSaleSchema = z.object({
   soldDate: z.coerce.date().optional(),
 })
 
+function parseId(value: string | undefined): number | undefined {
+  const id = Number(value)
+  return Number.isInteger(id) && id > 0 ? id : undefined
+}
+
 saleRouter.get("/", async (_req, res, next) => {
   try {
     const sales = await prisma.sale.findMany({
@@ -63,6 +68,37 @@ saleRouter.post("/", async (req, res, next) => {
     })
 
     return res.status(201).json(result)
+  } catch (error) {
+    next(error)
+  }
+})
+saleRouter.delete("/:id", async (req, res, next) => {
+  try {
+    const id = parseId(req.params.id)
+ 
+    if (id === undefined) {
+      return res.status(400).json({ message: "Invalid sale id" })
+    }
+ 
+    const existingSale = await prisma.sale.findUnique({
+      where: { id },
+    })
+ 
+    if (!existingSale) {
+      return res.status(404).json({ message: "Sale not found" })
+    }
+ 
+    // In a real app, deleting a sale would need stricter business rules.
+    // For this class project, deleting the sale returns the item to LISTED.
+    await prisma.$transaction(async (tx) => {
+      await tx.sale.delete({ where: { id } })
+      await tx.inventoryItem.update({
+        where: { id: existingSale.inventoryItemId },
+        data: { status: "LISTED" },
+      })
+    })
+ 
+    return res.status(204).send()
   } catch (error) {
     next(error)
   }

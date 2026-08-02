@@ -27,11 +27,37 @@ export type CreateInventoryItemInput = {
   status?: InventoryStatus
 }
  
+export type Sale = {
+  id: number
+  inventoryItemId: number
+  soldPrice: string | number
+  platformFee: string | number
+  shippingCost: string | number
+  soldDate: string
+  createdAt: string
+  inventoryItem: InventoryItem
+}
+ 
+export type CreateSaleInput = {
+  inventoryItemId: number
+  soldPrice: number
+  platformFee: number
+  shippingCost: number
+}
+ 
+export type CreateSaleResponse = {
+  sale: Sale
+  inventoryItem: InventoryItem
+}
+ 
+// One helper handles all frontend HTTP requests.
+// It turns non-OK API responses into JavaScript errors the UI can display.
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(options?.headers ?? {}),
     },
   })
  
@@ -44,7 +70,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
         message = body.message
       }
     } catch {
-      // If the response is not JSON, keep the generic message.
+      // If the server does not return JSON, keep the generic message.
     }
  
     throw new Error(message)
@@ -82,6 +108,23 @@ export function updateInventoryStatus(
  
 export function deleteInventoryItem(id: number): Promise<void> {
   return request<void>(`/api/inventory/${id}`, {
+    method: "DELETE",
+  })
+}
+ 
+export function getSales(): Promise<Sale[]> {
+  return request<Sale[]>("/api/sales")
+}
+ 
+export function createSale(input: CreateSaleInput): Promise<CreateSaleResponse> {
+  return request<CreateSaleResponse>("/api/sales", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })
+}
+ 
+export function deleteSale(id: number): Promise<void> {
+  return request<void>(`/api/sales/${id}`, {
     method: "DELETE",
   })
 }
