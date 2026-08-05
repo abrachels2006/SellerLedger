@@ -8,6 +8,7 @@ import express, {
 import { inventoryRouter } from "./routes/inventory.js"
 import { expenseRouter } from "./routes/expenses.js"
 import { saleRouter } from "./routes/sales.js"
+import authRouter from "./routes/auth.js"
 import { ZodError } from "zod"
 
 const app = express()
@@ -23,6 +24,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/inventory", inventoryRouter)
 app.use("/api/expenses", expenseRouter)
 app.use("/api/sales", saleRouter)
+app.use("/api/auth", authRouter)
 
 app.use(
   (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
