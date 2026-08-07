@@ -1,0 +1,12 @@
+$kind: collection
+name: sellerleger
+variables:
+  - key: json_web_token_00c9
+    secret: true
+    disabled: false
+  - key: supabase_service_role_api_key_19su
+    secret: true
+    disabled: false
+  - key: json_web_token_19su
+    secret: true
+    disabled: false

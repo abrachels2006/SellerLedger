@@ -1,4 +1,28 @@
 const API_BASE_URL = "http://localhost:4000"
+const TOKEN_STORAGE_KEY = "sellerledger.authToken"
+ 
+export type User = {
+  id: number
+  name: string
+  email: string
+  createdAt: string
+}
+ 
+export type AuthResponse = {
+  user: User
+  token: string
+}
+ 
+export type LoginInput = {
+  email: string
+  password: string
+}
+ 
+export type RegisterInput = {
+  name: string
+  email: string
+  password: string
+}
  
 export type InventoryStatus = "ACQUIRED" | "LISTED" | "SOLD" | "SHIPPED"
  
@@ -50,25 +74,51 @@ export type CreateSaleResponse = {
   inventoryItem: InventoryItem
 }
  
+// localStorage stores strings for the current website.
+// This learning project stores only the token, never the password.
+export function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_STORAGE_KEY)
+}
+ 
+export function setStoredToken(token: string): void {
+  localStorage.setItem(TOKEN_STORAGE_KEY, token)
+}
+ 
+export function clearStoredToken(): void {
+  localStorage.removeItem(TOKEN_STORAGE_KEY)
+}
+ 
 // One helper handles all frontend HTTP requests.
-// It turns non-OK API responses into JavaScript errors the UI can display.
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+// If a token exists, the helper adds Authorization: Bearer <token>.
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getStoredToken()
+  const headers = new Headers(options.headers)
+ 
+  // Only set Content-Type when we are sending a body.
+  // GET requests do not need a JSON Content-Type header.
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json")
+  }
+ 
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`)
+  }
+ 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers ?? {}),
-    },
+    headers,
   })
  
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`
  
     try {
-      const body = (await response.json()) as { message?: string }
-      if (body.message) {
-        message = body.message
+      const body = (await response.json()) as {
+        error?: string
+        message?: string
       }
+ 
+      message = body.error ?? body.message ?? message
     } catch {
       // If the server does not return JSON, keep the generic message.
     }
@@ -81,6 +131,24 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
  
   return response.json() as Promise<T>
+}
+ 
+export function registerUser(input: RegisterInput): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })
+}
+ 
+export function loginUser(input: LoginInput): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })
+}
+ 
+export function getCurrentUser(): Promise<{ user: User }> {
+  return request<{ user: User }>("/api/auth/me")
 }
  
 export function getInventoryItems(): Promise<InventoryItem[]> {
@@ -128,3 +196,4 @@ export function deleteSale(id: number): Promise<void> {
     method: "DELETE",
   })
 }
+

@@ -1,0 +1,18 @@
+$kind: http-request
+description: ""
+url: http://localhost:4000/api/auth/login
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"email\": \"awesome@example.com\",\r
+
+    \  \"password\": \"awesome123\"\r
+
+    }\r\n"
+auth:
+  type: bearer
+  credentials:
+    token: '"{{json_web_token_00c9}}"'
+order: 1785900275844
